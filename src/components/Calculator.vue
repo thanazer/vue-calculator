@@ -1,11 +1,13 @@
 <template>
   <b-card align="center" class="mt-4 p-0">
     <div class="output-screen p-2 d-flex align-items-center">
+      <!-- TODO: Turn this into a computed property that only displays one of the operand. -->
       {{ secondOperand || firstOperand || 0 }}
     </div>
     <div class="button-container">
       <b-row no-gutters>
         <b-col>
+          <!-- TODO: Conditionally render clear/all-clear button. -->
           <b-button block variant="warning">C</b-button>
         </b-col>
       </b-row>
@@ -38,6 +40,7 @@
 </template>
 
 <script>
+import { evaluate } from 'mathjs';
 export default {
   name: 'Calculator',
   data() {
@@ -46,6 +49,50 @@ export default {
       secondOperand: '',
       operator: '',
     };
+  },
+  methods: {
+    numberClicked(num) {
+      const operand = this.operator === '' ? 'firstOperand' : 'secondOperand';
+      if (num === '.') {
+        if (!this[operand].includes('.')) {
+          this[operand].push(num);
+        }
+      } else {
+        this[operand].push(num);
+      }
+    },
+    operatorClicked(op) {
+      if (this.firstOperand !== '' && this.secondOperand == '') {
+        this.operator = op;
+      } else if (this.firstOperand !== '' && this.secondOperand !== '') {
+        this.firstOperand = evaluate(
+          this.firstOperand + this.operator + this.secondOperand
+        ).toString();
+        this.secondOperand = '';
+        this.operator = op;
+      }
+    },
+    equalsClicked() {
+      this.firstOperand = evaluate(
+        this.firstOperand + this.operator + this.secondOperand
+      ).toString();
+      this.secondOperand = '';
+      this.operator = '';
+    },
+    clear() {
+      if (this.firstOperand !== '' && this.secondOperand === '') {
+        // Operator should not have a value in this case.
+        this.firstOperand = '';
+      } else if (this.firstOperand !== '' && this.secondOperand !== '') {
+        // Operator can have value in this case. No harm in letting it be.
+        this.secondOperand = '';
+      }
+    },
+    allClear() {
+      this.firstOperand = '';
+      this.secondOperand = '';
+      this.operator = '';
+    },
   },
 };
 </script>
