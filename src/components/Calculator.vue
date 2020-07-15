@@ -1,39 +1,36 @@
 <template>
   <b-card align="center" class="mt-4 p-0">
-    <div class="output-screen p-2 d-flex align-items-center">
-      <!-- TODO: Turn this into a computed property that only displays one of the operand. -->
-      {{ secondOperand || firstOperand || 0 }}
-    </div>
+    <div class="output-screen p-2 d-flex align-items-center">{{ screenValue }}</div>
     <div class="button-container">
       <b-row no-gutters>
         <b-col>
-          <!-- TODO: Conditionally render clear/all-clear button. -->
-          <b-button block variant="warning">C</b-button>
+          <b-button @click="allClear()" v-if="clearUsed" block variant="warning">AC</b-button>
+          <b-button @click="clear()" v-else block variant="warning">C</b-button>
         </b-col>
       </b-row>
       <b-row no-gutters>
-        <b-button>7</b-button>
-        <b-button>8</b-button>
-        <b-button>9</b-button>
-        <b-button variant="warning">+</b-button>
+        <b-button @click="numberClicked(7)">7</b-button>
+        <b-button @click="numberClicked(8)">8</b-button>
+        <b-button @click="numberClicked(9)">9</b-button>
+        <b-button variant="warning" @click="operatorClicked('+')">+</b-button>
       </b-row>
       <b-row no-gutters>
-        <b-button>4</b-button>
-        <b-button>5</b-button>
-        <b-button>6</b-button>
-        <b-button variant="warning">-</b-button>
+        <b-button @click="numberClicked(4)">4</b-button>
+        <b-button @click="numberClicked(5)">5</b-button>
+        <b-button @click="numberClicked(6)">6</b-button>
+        <b-button variant="warning" @click="operatorClicked('-')">-</b-button>
       </b-row>
       <b-row no-gutters>
-        <b-button>1</b-button>
-        <b-button>2</b-button>
-        <b-button>3</b-button>
-        <b-button variant="warning">*</b-button>
+        <b-button @click="numberClicked(1)">1</b-button>
+        <b-button @click="numberClicked(2)">2</b-button>
+        <b-button @click="numberClicked(3)">3</b-button>
+        <b-button variant="warning" @click="operatorClicked('*')">*</b-button>
       </b-row>
       <b-row no-gutters>
-        <b-button>0</b-button>
-        <b-button>.</b-button>
-        <b-button>=</b-button>
-        <b-button variant="warning">/</b-button>
+        <b-button @click="numberClicked(0)">0</b-button>
+        <b-button @click="numberClicked('.')">.</b-button>
+        <b-button @click="equalsClicked()">=</b-button>
+        <b-button variant="warning" @click="operatorClicked('/')">/</b-button>
       </b-row>
     </div>
   </b-card>
@@ -41,6 +38,7 @@
 
 <script>
 import { evaluate } from 'mathjs';
+
 export default {
   name: 'Calculator',
   data() {
@@ -48,20 +46,35 @@ export default {
       firstOperand: '',
       secondOperand: '',
       operator: '',
+      clearUsed: true,
+      currentOperand: 'firstOperand',
     };
+  },
+  computed: {
+    screenValue: function() {
+      if (
+        this.currentOperand === 'secondOperand' &&
+        this.secondOperand === ''
+      ) {
+        return this.firstOperand;
+      } else {
+        return this[this.currentOperand];
+      }
+    },
   },
   methods: {
     numberClicked(num) {
-      const operand = this.operator === '' ? 'firstOperand' : 'secondOperand';
-      if (num === '.') {
-        if (!this[operand].includes('.')) {
-          this[operand].push(num);
-        }
-      } else {
-        this[operand].push(num);
+      this.clearUsed = false;
+      if (num === '.' && this[this.currentOperand] === '') {
+        this[this.currentOperand] += '0.';
+      } else if (num === '.' && !this[this.currentOperand].includes('.')) {
+        this[this.currentOperand] += num;
+      } else if (num !== '.') {
+        this[this.currentOperand] += num;
       }
     },
     operatorClicked(op) {
+      this.currentOperand = 'secondOperand';
       if (this.firstOperand !== '' && this.secondOperand == '') {
         this.operator = op;
       } else if (this.firstOperand !== '' && this.secondOperand !== '') {
@@ -78,20 +91,17 @@ export default {
       ).toString();
       this.secondOperand = '';
       this.operator = '';
+      this.currentOperand = 'firstOperand';
     },
     clear() {
-      if (this.firstOperand !== '' && this.secondOperand === '') {
-        // Operator should not have a value in this case.
-        this.firstOperand = '';
-      } else if (this.firstOperand !== '' && this.secondOperand !== '') {
-        // Operator can have value in this case. No harm in letting it be.
-        this.secondOperand = '';
-      }
+      this[this.currentOperand] = '';
+      this.clearUsed = true;
     },
     allClear() {
       this.firstOperand = '';
       this.secondOperand = '';
       this.operator = '';
+      this.currentOperand = 'firstOperand';
     },
   },
 };
@@ -105,6 +115,7 @@ $dark-gray: #6c757d;
 .output-screen {
   height: 60px;
   border: 1px solid #000;
+  text-align: right;
 }
 
 .card {
@@ -137,5 +148,12 @@ $dark-gray: #6c757d;
   &:hover {
     background-color: darken($color: $orange, $amount: 8%);
   }
+}
+
+.btn:focus,
+.btn:active {
+  outline: none !important;
+  box-shadow: none;
+  border: 1px solid #000;
 }
 </style>
